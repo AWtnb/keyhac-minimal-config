@@ -40,6 +40,7 @@ def configure(keymap):
     keymap_global["S-U0-0"] = keymap.command_RecordClear
     keymap_global["U1-0"] = keymap.command_RecordPlay
 
+    # 無変換の単押しでescape
     keymap_global["O-(235)"] = "Esc"
 
     def bind_main_keys() -> None:
