@@ -1,9 +1,12 @@
-import pyauto
+import re
+import time
+import urllib.parse
+
+import ckit
 from keyhac import *
 
 
 def configure(keymap):
-
     # フォント設定
     keymap.setFont("MS Gothic", 16)
 
@@ -37,6 +40,8 @@ def configure(keymap):
     keymap_global["S-U0-0"] = keymap.command_RecordClear
     keymap_global["U1-0"] = keymap.command_RecordPlay
 
+    keymap_global["O-(235)"] = "Esc"
+
     def bind_main_keys() -> None:
         mod_keys = ("", "S-", "C-", "A-", "C-S-", "C-A-", "S-A-", "C-A-S-")
         for mod_key in mod_keys:
@@ -61,3 +66,59 @@ def configure(keymap):
 
     # 左Ctrl-左Shift-Xでクリップボード履歴
     keymap_global["LC-LS-X"] = keymap.command_ClipboardList
+
+    # ミリ秒指定で待つ関数
+    def delay(msec=50):
+        if 0 < msec:
+            time.sleep(msec / 1000)
+
+    # URL指定でウェブ検索する関数を生成する関数
+    def invoke_searcher(url):
+        # 約物をスペースに変換するサブ関数
+        def _replace(s):
+            reg_noise = re.compile(
+                r"[『』（）「」【】《》〈〉・，、。．：；―～─\(\)\"\'\[\]\{\}#&,\.:;/-]|\s+"
+            )
+            return reg_noise.sub(" ", s)
+
+        # 実際に検索を実行するサブ関数（__watch_clipboad と __search のサブサブ関数をスレッド機能で実行する）
+        def _searcher(u=url):
+            cb = ckit.getClipboardText() or ""
+            keymap.InputKeyCommand("C-C")()
+            delay()
+
+            def __watch_clipboard(job_item):
+                job_item.origin = cb
+                job_item.copied = ""
+                trial = 600
+                for _ in range(trial):
+                    s = ckit.getClipboardText() or ""
+                    if not s.strip():
+                        continue
+                    if s != job_item.origin:
+                        job_item.copied = s
+                        break
+
+            def __search(job_item):
+                s = job_item.copied
+                if len(s) < 1:
+                    s = job_item.origin
+                s = _replace(s)
+                s = urllib.parse.quote(s)
+                keymap.ShellExecuteCommand(None, u.format(s), "", "")()
+
+            job = ckit.JobItem(__watch_clipboard, __search)
+            ckit.JobQueue.defaultQueue().enqueue(job)
+
+        return _searcher
+
+    keymap_global["U0-S"] = keymap.defineMultiStrokeKeymap()
+    keymap_global["U0-S"]["G"] = invoke_searcher(
+        "http://www.google.com/search?nfpr=1&q={}"
+    )
+    keymap_global["U0-S"]["I"] = invoke_searcher(
+        "https://www.google.com/search?udm=2&nfpr=1&q={}"
+    )
+    keymap_global["U0-S"]["A"] = invoke_searcher(
+        "https://www.amazon.co.jp/s?i=stripbooks&k={}"
+    )
