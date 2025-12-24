@@ -12,5 +12,10 @@
 - `無変換+H/J/K/L` でカーソル移動
 - `無変換+B/D` でBack / Delete
 - `無変換+A/E` でHome / End
+- `無変換` 単押しでEscape
 - `無変換+Space` でEnter
 - `左Ctrl-左Shift-X` でクリップボード履歴
+- `無変換+S` を押してから、
+    - `G` で選択している文字列をGoogle検索
+    - `I` で選択している文字列をGoogle画像検索
+    - `A` で選択している文字列をAmazon検索
